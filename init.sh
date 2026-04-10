@@ -2,6 +2,7 @@
 
 deploy_custom_files() {
     cp /workspace/customer.py /home/frappe/frappe-bench/apps/helpdesk/helpdesk/api/customer.py
+    cp /workspace/admin_notifications.py /home/frappe/frappe-bench/apps/helpdesk/helpdesk/api/admin_notifications.py
 
     # Patch the SPA router to fix login redirect for customers
     cp /workspace/router_index.ts /home/frappe/frappe-bench/apps/helpdesk/desk/src/router/index.ts
@@ -45,6 +46,26 @@ role_home_page = {\
         echo '' >> "$HOOKS_FILE"
         echo 'web_include_js = ["/assets/helpdesk/js/login_redirect.js"]' >> "$HOOKS_FILE"
         echo "web_include_js hook added."
+    fi
+
+    # Add realtime admin email hooks for new tickets and agent replies
+    if ! grep -q "notify_admin_new_ticket" "$HOOKS_FILE"; then
+        cat >> "$HOOKS_FILE" <<'EOF'
+
+try:
+    doc_events
+except NameError:
+    doc_events = {}
+
+doc_events.setdefault("HD Ticket", {}).update({
+    "after_insert": "helpdesk.api.admin_notifications.notify_admin_new_ticket",
+})
+
+doc_events.setdefault("Communication", {}).update({
+    "after_insert": "helpdesk.api.admin_notifications.notify_admin_agent_reply",
+})
+EOF
+        echo "Admin realtime notification hooks added."
     fi
 
     # Rebuild helpdesk frontend with patched router + AI chat
