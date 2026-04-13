@@ -117,6 +117,11 @@ if [ -d "/home/frappe/frappe-bench/apps/frappe" ]; then
     echo "Bench already exists, skipping init"
     cd frappe-bench
     deploy_custom_files
+
+    # Deploy AI Assistant API key setting (doctype + UI patches)
+    sed -i 's/\r$//' /workspace/deploy_api_key_setting.sh
+    bash /workspace/deploy_api_key_setting.sh
+
     deploy_kb_features
     bench start
 else
@@ -159,6 +164,11 @@ bench --site helpdesk.localhost execute frappe.db.set_single_value --args '["Web
 bench --site helpdesk.localhost execute frappe.db.commit
 
 deploy_custom_files
+
+# Deploy AI Assistant API key setting (doctype + UI patches)
+sed -i 's/\r$//' /workspace/deploy_api_key_setting.sh
+bash /workspace/deploy_api_key_setting.sh
+
 deploy_kb_features
 
 bench start
