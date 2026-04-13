@@ -7,8 +7,11 @@ deploy_custom_files() {
     # Patch the SPA router to fix login redirect for customers
     cp /workspace/router_index.ts /home/frappe/frappe-bench/apps/helpdesk/desk/src/router/index.ts
 
-    # Deploy login redirect failsafe JS
+    # Deploy login redirect failsafe JS (with version stamp)
     cp /workspace/login_redirect.js /home/frappe/frappe-bench/apps/helpdesk/helpdesk/public/js/login_redirect.js
+    APP_VERSION=$(cat /workspace/VERSION 2>/dev/null | tr -d '[:space:]' || echo "unknown")
+    sed -i "s/__APP_VERSION__/$APP_VERSION/g" \
+        /home/frappe/frappe-bench/apps/helpdesk/helpdesk/public/js/login_redirect.js
 
     # Deploy AI chat backend API
     cp /workspace/ai_chat.py /home/frappe/frappe-bench/apps/helpdesk/helpdesk/api/ai_chat.py

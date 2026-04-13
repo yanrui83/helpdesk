@@ -16,3 +16,21 @@
 		}
 	}, 1500);
 })();
+
+// Show build version badge on the login page
+(function () {
+	if (window.location.pathname !== "/login") return;
+	function injectVersion() {
+		var badge = document.createElement("div");
+		badge.style.cssText =
+			"position:fixed;bottom:12px;right:16px;font-size:11px;" +
+			"color:#aaa;font-family:monospace;letter-spacing:.5px;z-index:9999;";
+		badge.textContent = "v__APP_VERSION__";
+		document.body.appendChild(badge);
+	}
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", injectVersion);
+	} else {
+		injectVersion();
+	}
+})();
