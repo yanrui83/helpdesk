@@ -11,7 +11,6 @@ from frappe import _
 
 # ── Constants ─────────────────────────────────────────────────
 
-GOOGLE_API_KEY = "AIzaSyCA9c-nV5i6oC-jGwJs8FEZZVzDPMqnwJQ"
 AI_MODEL = "gemini-2.5-flash"
 
 RAG_SYSTEM_PROMPT = """You are a helpful knowledge base assistant for a helpdesk system.
@@ -48,15 +47,25 @@ Rules:
 
 
 def _get_gemini_client():
-    """Lazy-load the Gemini client."""
+    """Lazy-load the Gemini client, reading the API key from HD Settings."""
     try:
         from google import genai
-
-        return genai.Client(api_key=GOOGLE_API_KEY)
     except ImportError:
         frappe.throw(
             _("google-genai package is not installed. Run: pip install google-genai")
         )
+
+    from frappe.utils.password import get_decrypted_password
+
+    api_key = get_decrypted_password(
+        "HD Settings", "HD Settings", "ai_assistant_api_key"
+    )
+    if not api_key:
+        frappe.throw(
+            _("AI Assistant API key is not configured. Go to Settings > General to add it.")
+        )
+
+    return genai.Client(api_key=api_key)
 
 
 def _strip_html(html: str) -> str:
