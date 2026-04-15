@@ -96,11 +96,16 @@ def _search_articles(query: str, limit: int = 8) -> list[dict]:
     """
     Search published HD Articles by keyword matching on title and content.
     Returns list of dicts with name, title, category_name, content.
+
+    Strategy:
+      1. Try matching ALL query words (narrow, most relevant)
+      2. Try matching ANY query word (broader)
+      3. Fall back to returning all published articles (ensures AI always has context)
     """
     QBArticle = frappe.qb.DocType("HD Article")
     QBCategory = frappe.qb.DocType("HD Article Category")
 
-    q = (
+    base_query = (
         frappe.qb.from_(QBArticle)
         .left_join(QBCategory)
         .on(QBArticle.category == QBCategory.name)
@@ -113,23 +118,48 @@ def _search_articles(query: str, limit: int = 8) -> list[dict]:
         .where(QBArticle.status == "Published")
     )
 
-    # Simple keyword search: match any word in title or content
     words = [w.strip() for w in query.split() if len(w.strip()) > 2]
+
+    articles = []
+
+    # Step 1: Try ALL words match (most relevant)
     if words:
         from pypika import Criterion
 
-        conditions = []
-        for word in words[:10]:  # Cap to prevent abuse
+        all_conditions = []
+        for word in words[:10]:
             like_pattern = f"%{word}%"
-            conditions.append(QBArticle.title.like(like_pattern))
-            conditions.append(QBArticle.content.like(like_pattern))
-        q = q.where(Criterion.any(conditions))
+            all_conditions.append(
+                Criterion.any([
+                    QBArticle.title.like(like_pattern),
+                    QBArticle.content.like(like_pattern),
+                ])
+            )
+        q = base_query.where(Criterion.all(all_conditions)).limit(limit)
+        articles = q.run(as_dict=True)
 
-    articles = q.limit(limit).run(as_dict=True)
+    # Step 2: If too few results, try ANY word match
+    if len(articles) < 3 and words:
+        from pypika import Criterion
 
-    # If keyword search returns nothing, fall back to returning all published articles
-    if not articles:
-        articles = (
+        any_conditions = []
+        for word in words[:10]:
+            like_pattern = f"%{word}%"
+            any_conditions.append(QBArticle.title.like(like_pattern))
+            any_conditions.append(QBArticle.content.like(like_pattern))
+        q = base_query.where(Criterion.any(any_conditions)).limit(limit)
+        any_articles = q.run(as_dict=True)
+
+        # Merge without duplicates, keeping order
+        seen = {a.name for a in articles}
+        for a in any_articles:
+            if a.name not in seen:
+                articles.append(a)
+                seen.add(a.name)
+
+    # Step 3: If still too few, pad with all published articles
+    if len(articles) < 3:
+        all_articles = (
             frappe.qb.from_(QBArticle)
             .left_join(QBCategory)
             .on(QBArticle.category == QBCategory.name)
@@ -143,8 +173,13 @@ def _search_articles(query: str, limit: int = 8) -> list[dict]:
             .limit(limit)
             .run(as_dict=True)
         )
+        seen = {a.name for a in articles}
+        for a in all_articles:
+            if a.name not in seen:
+                articles.append(a)
+                seen.add(a.name)
 
-    return articles
+    return articles[:limit]
 
 
 @frappe.whitelist(allow_guest=True)
@@ -270,13 +305,17 @@ def ask(question: str, conversation_history: str = "[]"):
 
     # Extract cited articles (those whose title appears in the answer)
     cited = []
+    site_url = (frappe.utils.get_url() or "").rstrip("/")
     for title, info in article_map.items():
         if title in answer_text:
+            info["url"] = f"{site_url}/helpdesk/kb/articles/{info['name']}"
             cited.append(info)
 
     # If no explicit citations found, include top articles as context
     if not cited:
-        cited = list(article_map.values())[:3]
+        for info in list(article_map.values())[:3]:
+            info["url"] = f"{site_url}/helpdesk/kb/articles/{info['name']}"
+            cited.append(info)
 
     # Generate follow-up questions
     suggested_questions = []

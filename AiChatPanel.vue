@@ -135,7 +135,7 @@
                     v-for="c in msg.citations"
                     :key="c.name"
                     class="ai-source-item"
-                    :href="getArticleUrl(c.name)"
+                    :href="getArticleUrl(c)"
                     target="_blank"
                   >
                     <div class="ai-source-icon">
@@ -222,6 +222,7 @@ interface Citation {
   name: string;
   title: string;
   category: string;
+  url?: string;
 }
 
 interface Message {
@@ -269,8 +270,8 @@ function renderMarkdown(text: string): string {
   return html;
 }
 
-function getArticleUrl(name: string): string {
-  return `/helpdesk/kb/articles/${name}`;
+function getArticleUrl(citation: Citation): string {
+  return citation.url || `/helpdesk/kb/articles/${citation.name}`;
 }
 
 function autoResize() {

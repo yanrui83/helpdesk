@@ -113,14 +113,34 @@ deploy_kb_features() {
     echo "KB features deployed."
 }
 
+# ─── Site settings ───
+configure_site_settings() {
+    echo "Configuring site settings..."
+    cd /home/frappe/frappe-bench
+    # Enable username login in site_config (belt-and-suspenders)
+    bench --site helpdesk.localhost set-config allow_login_using_user_name 1
+    # Enable username login in System Settings (the source Frappe auth actually reads)
+    cp /workspace/enable_username_login.py /home/frappe/frappe-bench/apps/helpdesk/helpdesk/api/enable_username_login.py
+    bench --site helpdesk.localhost execute helpdesk.api.enable_username_login.run
+    echo "  allow_login_using_user_name enabled in System Settings"
+    # Auto-assign username (part before @) to any portal user that has none
+    cp /workspace/set_portal_usernames.py /home/frappe/frappe-bench/apps/helpdesk/helpdesk/api/set_portal_usernames.py 2>/dev/null || true
+    bench --site helpdesk.localhost execute helpdesk.api.set_portal_usernames.run
+}
+
 if [ -d "/home/frappe/frappe-bench/apps/frappe" ]; then
     echo "Bench already exists, skipping init"
     cd frappe-bench
+    configure_site_settings
     deploy_custom_files
 
     # Deploy AI Assistant API key setting (doctype + UI patches)
     sed -i 's/\r$//' /workspace/deploy_api_key_setting.sh
     bash /workspace/deploy_api_key_setting.sh
+
+    # Deploy Customer Tags doctype + mandatory ticket fields
+    sed -i 's/\r$//' /workspace/deploy_customer_tags.sh
+    bash /workspace/deploy_customer_tags.sh
 
     deploy_kb_features
     bench start
@@ -169,6 +189,11 @@ deploy_custom_files
 sed -i 's/\r$//' /workspace/deploy_api_key_setting.sh
 bash /workspace/deploy_api_key_setting.sh
 
+# Deploy Customer Tags doctype + mandatory ticket fields
+sed -i 's/\r$//' /workspace/deploy_customer_tags.sh
+bash /workspace/deploy_customer_tags.sh
+
 deploy_kb_features
+configure_site_settings
 
 bench start
