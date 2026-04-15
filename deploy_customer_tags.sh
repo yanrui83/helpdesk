@@ -37,7 +37,13 @@ bench --site helpdesk.localhost execute helpdesk.api.setup_ticket_fields.run
 cp /workspace/hd_ticket_template_api.py "$APP/helpdesk/helpdesk/doctype/hd_ticket_template/api.py"
 echo "Template API patched (customer tag filter)"
 
-# Step 5: Copy custom TicketNew.vue and rebuild frontend
+# Step 5: Copy AI backend and chat panel
+cp /workspace/ai_chat.py "$APP/helpdesk/api/ai_chat.py"
+echo "ai_chat.py copied"
+cp /workspace/AiChatPanel.vue "$APP/desk/src/components/AiChatPanel.vue"
+echo "AiChatPanel.vue copied"
+
+# Step 6: Copy custom TicketNew.vue and rebuild frontend
 cp /workspace/TicketNew.vue "$APP/desk/src/pages/ticket/TicketNew.vue"
 echo "TicketNew.vue copied"
 cd "$BENCH"

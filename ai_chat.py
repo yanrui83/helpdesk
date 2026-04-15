@@ -11,7 +11,7 @@ from frappe import _
 
 # ── Constants ─────────────────────────────────────────────────
 
-AI_MODEL = "gemini-2.5-flash"
+DEFAULT_AI_MODEL = "gemini-2.5-flash"
 
 RAG_SYSTEM_PROMPT = """You are a helpful knowledge base assistant for a helpdesk system.
 
@@ -68,6 +68,17 @@ def _get_gemini_client():
     return genai.Client(api_key=api_key)
 
 
+def _get_ai_model() -> str:
+    """Read AI model name from HD Settings, falling back to default."""
+    try:
+        model = frappe.db.get_single_value("HD Settings", "ai_assistant_model")
+        if model and model.strip():
+            return model.strip()
+    except Exception:
+        pass
+    return DEFAULT_AI_MODEL
+
+
 def _strip_html(html: str) -> str:
     """Remove HTML tags, inline styles, and decode entities for plain-text context."""
     if not html:
@@ -101,6 +112,8 @@ def _search_articles(query: str, limit: int = 8) -> list[dict]:
       1. Try matching ALL query words (narrow, most relevant)
       2. Try matching ANY query word (broader)
       3. Fall back to returning all published articles (ensures AI always has context)
+
+    Results are scored so that title matches rank higher than content-only matches.
     """
     QBArticle = frappe.qb.DocType("HD Article")
     QBCategory = frappe.qb.DocType("HD Article Category")
@@ -118,7 +131,7 @@ def _search_articles(query: str, limit: int = 8) -> list[dict]:
         .where(QBArticle.status == "Published")
     )
 
-    words = [w.strip() for w in query.split() if len(w.strip()) > 2]
+    words = [w.strip().lower() for w in query.split() if len(w.strip()) > 2]
 
     articles = []
 
@@ -178,6 +191,18 @@ def _search_articles(query: str, limit: int = 8) -> list[dict]:
             if a.name not in seen:
                 articles.append(a)
                 seen.add(a.name)
+
+    # Score and sort: title matches rank higher than content-only matches
+    if words:
+        def _score(article):
+            title_lower = (article.get("title") or "").lower()
+            score = 0
+            for w in words:
+                if w in title_lower:
+                    score += 10  # high weight for title match
+            return score
+
+        articles.sort(key=_score, reverse=True)
 
     return articles[:limit]
 
@@ -283,15 +308,16 @@ def ask(question: str, conversation_history: str = "[]"):
 
     # Call Gemini
     client = _get_gemini_client()
+    ai_model = _get_ai_model()
     from google.genai import types
 
     try:
         response = client.models.generate_content(
-            model=AI_MODEL,
+            model=ai_model,
             contents=user_message,
             config=types.GenerateContentConfig(
                 system_instruction=RAG_SYSTEM_PROMPT,
-                max_output_tokens=1500,
+                max_output_tokens=8192,
             ),
         )
         answer_text = response.text.strip()
@@ -303,17 +329,18 @@ def ask(question: str, conversation_history: str = "[]"):
             "suggested_questions": [],
         }
 
-    # Extract cited articles (those whose title appears in the answer)
+    # Extract cited articles — case-insensitive matching and partial title matching
     cited = []
     site_url = (frappe.utils.get_url() or "").rstrip("/")
+    answer_lower = answer_text.lower()
     for title, info in article_map.items():
-        if title in answer_text:
+        if title.lower() in answer_lower:
             info["url"] = f"{site_url}/helpdesk/kb/articles/{info['name']}"
             cited.append(info)
 
-    # If no explicit citations found, include top articles as context
+    # If no explicit citations found, include all articles that were sent as context
     if not cited:
-        for info in list(article_map.values())[:3]:
+        for info in list(article_map.values()):
             info["url"] = f"{site_url}/helpdesk/kb/articles/{info['name']}"
             cited.append(info)
 
@@ -326,7 +353,7 @@ def ask(question: str, conversation_history: str = "[]"):
             f"Generate 3 follow-up questions."
         )
         followup_response = client.models.generate_content(
-            model=AI_MODEL,
+            model=ai_model,
             contents=followup_prompt,
             config=types.GenerateContentConfig(
                 system_instruction=FOLLOWUP_PROMPT,

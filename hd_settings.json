@@ -78,7 +78,11 @@
   "reply_from_agent_section",
   "enable_reply_email_via_agent",
   "reply_via_agent_email_content",
-  "trash_retention_days"
+  "trash_retention_days",
+  "integrations_tab",
+  "ai_assistant_section",
+  "ai_assistant_api_key",
+  "ai_assistant_model"
  ],
  "fields": [
   {
@@ -512,6 +516,29 @@
    "fieldname": "trash_retention_days",
    "fieldtype": "Int",
    "label": "Trash Retention Days"
+  },
+  {
+   "fieldname": "integrations_tab",
+   "fieldtype": "Tab Break",
+   "label": "Integrations"
+  },
+  {
+   "fieldname": "ai_assistant_section",
+   "fieldtype": "Section Break",
+   "label": "AI Assistant"
+  },
+  {
+   "fieldname": "ai_assistant_api_key",
+   "fieldtype": "Password",
+   "label": "AI Assistant API Key",
+   "description": "API key used by the AI assistant integration. This value is stored encrypted."
+  },
+  {
+   "fieldname": "ai_assistant_model",
+   "fieldtype": "Data",
+   "label": "AI Model",
+   "default": "gemini-2.5-flash",
+   "description": "Gemini model name (e.g. gemini-2.5-flash, gemini-2.5-pro, gemini-2.0-flash). Leave blank for default."
   }
  ],
  "grid_page_length": 50,
