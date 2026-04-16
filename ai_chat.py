@@ -103,10 +103,55 @@ def _strip_html(html: str) -> str:
     return text.strip()
 
 
+def _get_accessible_categories() -> list[str] | None:
+    """Return list of category IDs the current user may access, or None if no
+    filtering is needed (agents / Administrator see everything).
+
+    Access rules (matches _filter_categories_by_access in kb_custom.py):
+      - Categories with NO HD Category Access entries are public.
+      - Categories WITH entries are restricted to the listed users.
+      - Agents and Administrator bypass all restrictions.
+    """
+    from helpdesk.utils import is_agent
+
+    user = frappe.session.user
+    if user == "Administrator" or is_agent():
+        return None  # no filtering — full access
+
+    # All categories
+    all_cats = frappe.get_all("HD Article Category", pluck="name")
+    if not all_cats:
+        return []
+
+    # Restricted entries
+    restricted = frappe.get_all(
+        "HD Category Access", fields=["category", "user"]
+    )
+    if not restricted:
+        return None  # nothing restricted anywhere
+
+    access_map: dict[str, set[str]] = {}
+    for r in restricted:
+        access_map.setdefault(r["category"], set()).add(r["user"])
+
+    accessible = []
+    for cat in all_cats:
+        allowed = access_map.get(cat)
+        if allowed is None:
+            accessible.append(cat)        # public category
+        elif user in allowed:
+            accessible.append(cat)        # user explicitly listed
+
+    return accessible
+
+
 def _search_articles(query: str, limit: int = 8) -> list[dict]:
     """
     Search published HD Articles by keyword matching on title and content.
     Returns list of dicts with name, title, category_name, content.
+
+    Respects HD Category Access permissions — customers only see articles in
+    categories they are allowed to access.
 
     Strategy:
       1. Try matching ALL query words (narrow, most relevant)
@@ -130,6 +175,13 @@ def _search_articles(query: str, limit: int = 8) -> list[dict]:
         )
         .where(QBArticle.status == "Published")
     )
+
+    # ── Apply category-level access control ───────────────────
+    accessible_cats = _get_accessible_categories()
+    if accessible_cats is not None:
+        if not accessible_cats:
+            return []  # user has access to zero categories
+        base_query = base_query.where(QBArticle.category.isin(accessible_cats))
 
     words = [w.strip().lower() for w in query.split() if len(w.strip()) > 2]
 
@@ -170,9 +222,9 @@ def _search_articles(query: str, limit: int = 8) -> list[dict]:
                 articles.append(a)
                 seen.add(a.name)
 
-    # Step 3: If still too few, pad with all published articles
+    # Step 3: If still too few, pad with all accessible published articles
     if len(articles) < 3:
-        all_articles = (
+        fallback_q = (
             frappe.qb.from_(QBArticle)
             .left_join(QBCategory)
             .on(QBArticle.category == QBCategory.name)
@@ -183,9 +235,10 @@ def _search_articles(query: str, limit: int = 8) -> list[dict]:
                 QBCategory.category_name,
             )
             .where(QBArticle.status == "Published")
-            .limit(limit)
-            .run(as_dict=True)
         )
+        if accessible_cats is not None:
+            fallback_q = fallback_q.where(QBArticle.category.isin(accessible_cats))
+        all_articles = fallback_q.limit(limit).run(as_dict=True)
         seen = {a.name for a in articles}
         for a in all_articles:
             if a.name not in seen:
