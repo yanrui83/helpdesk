@@ -24,7 +24,25 @@
 
     <!-- Chat Panel -->
     <Transition name="slide">
-      <div v-if="showPanel" class="ai-panel">
+      <div
+        v-if="showPanel"
+        class="ai-panel"
+        :class="{ maximized: isMaximized }"
+        :style="panelStyle"
+      >
+        <!-- Resize handle (left edge) -->
+        <div
+          v-if="!isMaximized"
+          class="ai-resize-handle-left"
+          @mousedown.prevent="startResizeWidth"
+        />
+        <!-- Resize handle (top edge) -->
+        <div
+          v-if="!isMaximized"
+          class="ai-resize-handle-top"
+          @mousedown.prevent="startResizeHeight"
+        />
+
         <!-- Header -->
         <div class="ai-panel-header">
           <div class="ai-panel-title">
@@ -43,6 +61,33 @@
               >
                 <polyline points="1 4 1 10 7 10" />
                 <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+              </svg>
+            </button>
+            <button
+              class="ai-header-btn"
+              @click="isMaximized = !isMaximized"
+              :title="isMaximized ? 'Restore' : 'Maximize'"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <template v-if="!isMaximized">
+                  <polyline points="15 3 21 3 21 9" />
+                  <polyline points="9 21 3 21 3 15" />
+                  <line x1="21" y1="3" x2="14" y2="10" />
+                  <line x1="3" y1="21" x2="10" y2="14" />
+                </template>
+                <template v-else>
+                  <polyline points="4 14 10 14 10 20" />
+                  <polyline points="20 10 14 10 14 4" />
+                  <line x1="14" y1="10" x2="21" y2="3" />
+                  <line x1="3" y1="21" x2="10" y2="14" />
+                </template>
               </svg>
             </button>
             <button
@@ -215,7 +260,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, reactive } from "vue";
+import { ref, nextTick, reactive, computed } from "vue";
 import { createResource } from "frappe-ui";
 
 interface Citation {
@@ -240,6 +285,49 @@ const isLoading = ref(false);
 const messagesContainer = ref<HTMLElement | null>(null);
 const inputEl = ref<HTMLTextAreaElement | null>(null);
 const messages = reactive<Message[]>([]);
+
+// ── Resize / Maximize state ──────────────────────────────────
+const isMaximized = ref(false);
+const panelWidth = ref(400);
+const panelHeight = ref(600);
+
+const panelStyle = computed(() => {
+  if (isMaximized.value) return {};
+  return {
+    width: panelWidth.value + "px",
+    height: panelHeight.value + "px",
+  };
+});
+
+function startResizeWidth(e: MouseEvent) {
+  const startX = e.clientX;
+  const startW = panelWidth.value;
+  const onMove = (ev: MouseEvent) => {
+    const delta = startX - ev.clientX;
+    panelWidth.value = Math.max(320, Math.min(startW + delta, window.innerWidth - 48));
+  };
+  const onUp = () => {
+    document.removeEventListener("mousemove", onMove);
+    document.removeEventListener("mouseup", onUp);
+  };
+  document.addEventListener("mousemove", onMove);
+  document.addEventListener("mouseup", onUp);
+}
+
+function startResizeHeight(e: MouseEvent) {
+  const startY = e.clientY;
+  const startH = panelHeight.value;
+  const onMove = (ev: MouseEvent) => {
+    const delta = startY - ev.clientY;
+    panelHeight.value = Math.max(300, Math.min(startH + delta, window.innerHeight - 48));
+  };
+  const onUp = () => {
+    document.removeEventListener("mousemove", onMove);
+    document.removeEventListener("mouseup", onUp);
+  };
+  document.addEventListener("mousemove", onMove);
+  document.addEventListener("mouseup", onUp);
+}
 
 function renderMarkdown(text: string): string {
   if (!text) return "";
@@ -339,12 +427,13 @@ async function sendQuestion() {
     if (typingIdx !== -1) messages.splice(typingIdx, 1);
 
     const data = res.data || {};
+    const citations = data.cited_articles || [];
     messages.push({
       role: "assistant",
       content: data.answer || "No answer available.",
-      citations: data.cited_articles || [],
+      citations: citations,
       suggestions: data.suggested_questions || [],
-      showSources: false,
+      showSources: citations.length > 0,
     });
   } catch (e: any) {
     const typingIdx = messages.findIndex((m) => m.isTyping);
@@ -403,6 +492,38 @@ async function sendQuestion() {
   flex-direction: column;
   overflow: hidden;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.ai-panel.maximized {
+  top: 24px;
+  left: 24px;
+  right: 24px;
+  bottom: 24px;
+  width: auto !important;
+  height: auto !important;
+  max-width: none;
+  max-height: none;
+  border-radius: 12px;
+}
+
+/* ─── Resize Handles ────────────────────────────────────────── */
+.ai-resize-handle-left {
+  position: absolute;
+  top: 0;
+  left: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: ew-resize;
+  z-index: 10;
+}
+.ai-resize-handle-top {
+  position: absolute;
+  top: -3px;
+  left: 0;
+  width: 100%;
+  height: 6px;
+  cursor: ns-resize;
+  z-index: 10;
 }
 
 /* ─── Header ────────────────────────────────────────────────── */
