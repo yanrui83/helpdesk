@@ -274,6 +274,7 @@
 <script setup lang="ts">
 import { ref, nextTick, reactive, computed } from "vue";
 import { createResource } from "frappe-ui";
+import { isCustomerPortal } from "@/utils";
 
 interface Citation {
   name: string;
@@ -390,7 +391,10 @@ function renderMarkdown(text: string): string {
 }
 
 function getArticleUrl(citation: Citation): string {
-  return citation.url || `/helpdesk/kb/articles/${citation.name}`;
+  const base = isCustomerPortal.value
+    ? "/helpdesk/kb-public/articles/"
+    : "/helpdesk/kb/articles/";
+  return base + citation.name;
 }
 
 function autoResize() {
