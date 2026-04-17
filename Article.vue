@@ -380,6 +380,16 @@ function addLinksToHeadings(content: string) {
     const id = text.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
     heading.setAttribute("id", id);
   });
+  // Ensure Frappe-hosted images send auth cookies (needed for private files)
+  if (isCustomerPortal.value) {
+    const images = doc.querySelectorAll("img");
+    images.forEach((img) => {
+      const src = img.getAttribute("src") || "";
+      if (src.startsWith("/files/") || src.startsWith("/private/files/")) {
+        img.setAttribute("crossorigin", "use-credentials");
+      }
+    });
+  }
   return doc.body.innerHTML;
 }
 function scrollToHeading() {
@@ -507,8 +517,8 @@ onMounted(() => {
   -ms-user-select: none;
 }
 .kb-no-copy :deep(img) {
-  pointer-events: none;
   -webkit-user-drag: none;
+  user-drag: none;
 }
 
 /* ── Watermark overlay ───────────────────────────────────────── */
@@ -525,14 +535,14 @@ onMounted(() => {
   opacity: 0.08;
 }
 .kb-watermark-logo {
-  width: 320px;
-  max-width: 50vw;
+  width: 540px;
+  max-width: 60vw;
   object-fit: contain;
   pointer-events: none;
   -webkit-user-drag: none;
 }
 .kb-watermark-text {
-  font-size: 48px;
+  font-size: 72px;
   font-weight: 700;
   color: #374151;
   white-space: nowrap;
