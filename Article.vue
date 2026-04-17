@@ -29,19 +29,13 @@
     >
       <!-- Watermark overlay for customer portal -->
       <div v-if="isCustomerPortal" class="kb-watermark" aria-hidden="true">
-        <div
-          v-for="n in 24"
-          :key="n"
-          class="kb-watermark-tile"
-        >
-          <img
-            v-if="brandLogo"
-            :src="brandLogo"
-            class="kb-watermark-logo"
-            draggable="false"
-          />
-          <span v-else class="kb-watermark-text">{{ brandName || 'Confidential' }}</span>
-        </div>
+        <img
+          v-if="brandLogo"
+          :src="brandLogo"
+          class="kb-watermark-logo"
+          draggable="false"
+        />
+        <span v-else class="kb-watermark-text">{{ brandName || 'Confidential' }}</span>
       </div>
       <!-- article Info -->
       <div
@@ -519,34 +513,29 @@ onMounted(() => {
 
 /* ── Watermark overlay ───────────────────────────────────────── */
 .kb-watermark {
-  position: absolute;
-  inset: 0;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   pointer-events: none;
-  overflow: hidden;
   z-index: 10;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: repeat(6, 1fr);
-  gap: 0;
-}
-.kb-watermark-tile {
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.07;
-  transform: rotate(-30deg);
+  opacity: 0.08;
 }
 .kb-watermark-logo {
-  max-width: 90px;
-  max-height: 40px;
+  width: 320px;
+  max-width: 50vw;
   object-fit: contain;
   pointer-events: none;
   -webkit-user-drag: none;
 }
 .kb-watermark-text {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 48px;
+  font-weight: 700;
   color: #374151;
   white-space: nowrap;
+  transform: rotate(-30deg);
 }
 </style>
