@@ -29,7 +29,7 @@ Answer questions using the provided knowledge base articles. Follow these rules:
 8. Be concise but complete. Use markdown formatting.
 9. Prefer answering over asking for clarification.
 10. If the information is not available, end your response with exactly:
-    "Can't find what you're looking for? [Create a ticket →](/helpdesk/tickets/new)""""
+    Can't find what you're looking for? [Create a ticket →](/helpdesk/tickets/new)"""
 
 RAG_USER_TEMPLATE = """Question: {question}
 
