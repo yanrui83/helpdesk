@@ -27,7 +27,9 @@ Answer questions using the provided knowledge base articles. Follow these rules:
 6. If articles are provided, there is almost always something useful to say about them.
 7. Do NOT hallucinate or add information beyond the provided articles.
 8. Be concise but complete. Use markdown formatting.
-9. Prefer answering over asking for clarification."""
+9. Prefer answering over asking for clarification.
+10. If the information is not available, end your response with exactly:
+    "Can't find what you're looking for? [Create a ticket →](/helpdesk/tickets/new)""""
 
 RAG_USER_TEMPLATE = """Question: {question}
 
@@ -381,6 +383,22 @@ def ask(question: str, conversation_history: str = "[]"):
             "cited_articles": [],
             "suggested_questions": [],
         }
+
+    # Append ticket link if the AI says information is not available
+    _not_available_phrases = [
+        "not available in the knowledge base",
+        "no relevant information",
+        "not covered in the knowledge base",
+        "couldn't find",
+        "could not find",
+    ]
+    answer_lower_check = answer_text.lower()
+    if any(phrase in answer_lower_check for phrase in _not_available_phrases):
+        if "create a ticket" not in answer_lower_check:
+            answer_text += (
+                "\n\nCan't find what you're looking for? "
+                "[Create a ticket \u2192](/helpdesk/tickets/new)"
+            )
 
     # Extract cited articles — case-insensitive matching and partial title matching
     cited = []

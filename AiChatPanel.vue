@@ -42,6 +42,18 @@
           class="ai-resize-handle-top"
           @mousedown.prevent="startResizeHeight"
         />
+        <!-- Resize grip (top-left corner) -->
+        <div
+          v-if="!isMaximized"
+          class="ai-resize-grip"
+          @mousedown.prevent="startResizeCorner"
+        >
+          <svg width="10" height="10" viewBox="0 0 10 10">
+            <line x1="0" y1="10" x2="10" y2="0" stroke="currentColor" stroke-width="1.2" />
+            <line x1="0" y1="6" x2="6" y2="0" stroke="currentColor" stroke-width="1.2" />
+            <line x1="0" y1="2" x2="2" y2="0" stroke="currentColor" stroke-width="1.2" />
+          </svg>
+        </div>
 
         <!-- Header -->
         <div class="ai-panel-header">
@@ -329,6 +341,23 @@ function startResizeHeight(e: MouseEvent) {
   document.addEventListener("mouseup", onUp);
 }
 
+function startResizeCorner(e: MouseEvent) {
+  const startX = e.clientX;
+  const startY = e.clientY;
+  const startW = panelWidth.value;
+  const startH = panelHeight.value;
+  const onMove = (ev: MouseEvent) => {
+    panelWidth.value = Math.max(320, Math.min(startW + (startX - ev.clientX), window.innerWidth - 48));
+    panelHeight.value = Math.max(300, Math.min(startH + (startY - ev.clientY), window.innerHeight - 48));
+  };
+  const onUp = () => {
+    document.removeEventListener("mousemove", onMove);
+    document.removeEventListener("mouseup", onUp);
+  };
+  document.addEventListener("mousemove", onMove);
+  document.addEventListener("mouseup", onUp);
+}
+
 function renderMarkdown(text: string): string {
   if (!text) return "";
   // Simple markdown: bold, italic, code, lists, paragraphs
@@ -349,6 +378,8 @@ function renderMarkdown(text: string): string {
   html = html.replace(/(<li>.*<\/li>\n?)+/g, "<ul>$&</ul>");
   // Ordered lists
   html = html.replace(/^\d+\. (.+)$/gm, "<li>$1</li>");
+  // Markdown links [text](url)
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="ai-inline-link">$1</a>');
   // Paragraphs
   html = html
     .split("\n\n")
@@ -525,6 +556,23 @@ async function sendQuestion() {
   cursor: ns-resize;
   z-index: 10;
 }
+.ai-resize-grip {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  z-index: 11;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-400, #9ca3af);
+  transform: rotate(90deg);
+}
+.ai-resize-grip:hover {
+  color: var(--gray-600, #4b5563);
+}
 
 /* ─── Header ────────────────────────────────────────────────── */
 .ai-panel-header {
@@ -686,6 +734,14 @@ async function sendQuestion() {
   border-radius: 8px;
   overflow-x: auto;
   font-size: 12px;
+}
+.ai-bubble.assistant :deep(.ai-inline-link) {
+  color: var(--blue-600, #2563eb);
+  text-decoration: none;
+  font-weight: 500;
+}
+.ai-bubble.assistant :deep(.ai-inline-link:hover) {
+  text-decoration: underline;
 }
 
 /* ─── Citations ─────────────────────────────────────────────── */
