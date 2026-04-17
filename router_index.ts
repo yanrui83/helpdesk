@@ -200,20 +200,25 @@ export const router = createRouter({
 router.beforeEach(async (to, _, next) => {
   const authStore = useAuthStore();
   isCustomerPortal.value = to.meta.public || false;
+  console.log("[Router Guard]", to.name, to.path, "meta.public=", to.meta.public, "isLoggedIn=", authStore.isLoggedIn);
   if (authStore.isLoggedIn) {
     await authStore.init();
   }
+  console.log("[Router Guard] after init: hasDeskAccess=", authStore.hasDeskAccess, "isAgent=", authStore.isAgent);
 
   if (!authStore.isLoggedIn) {
+    console.log("[Router Guard] → LOGIN redirect");
     window.location.href = LOGIN_PAGE + "?redirect-to=/helpdesk";
     return;
   } else if (to.name === "Article" && !authStore.hasDeskAccess) {
+    console.log("[Router Guard] → ArticlePublic redirect");
     // Customer landed on agent KB route — redirect to public KB route
     next({
       name: "ArticlePublic",
       params: { articleId: to.params.articleId },
     });
   } else if (!to.meta.public && !authStore.hasDeskAccess) {
+    console.log("[Router Guard] → TicketsCustomer redirect (non-public route for non-desk user)");
     next({ name: "TicketsCustomer" });
   } else if (to.name === "TicketAgent" && !authStore.isAgent) {
     const ticketId = to.params.ticketId;
