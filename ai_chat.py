@@ -29,7 +29,7 @@ Answer questions using the provided knowledge base articles. Follow these rules:
 8. Be concise but complete. Use markdown formatting.
 9. Prefer answering over asking for clarification.
 10. If the information is not available, end your response with exactly:
-    Can't find what you're looking for? [Create a ticket →](/helpdesk/tickets/new)"""
+    Can't find what you're looking for? [Create a ticket →]({ticket_url})"""
 
 RAG_USER_TEMPLATE = """Question: {question}
 
@@ -68,6 +68,22 @@ def _get_gemini_client():
         )
 
     return genai.Client(api_key=api_key)
+
+
+def _is_portal_user() -> bool:
+    """Check if the current user is a customer portal user (not an agent)."""
+    user_roles = frappe.get_roles(frappe.session.user)
+    return "Agent" not in user_roles and "System Manager" not in user_roles
+
+
+def _get_ticket_url() -> str:
+    """Return the correct ticket creation URL based on user role."""
+    return "/helpdesk/my-tickets/new" if _is_portal_user() else "/helpdesk/tickets/new"
+
+
+def _get_kb_prefix() -> str:
+    """Return 'kb-public' for portal users, 'kb' for agents."""
+    return "kb-public" if _is_portal_user() else "kb"
 
 
 def _get_ai_model() -> str:
@@ -371,7 +387,7 @@ def ask(question: str, conversation_history: str = "[]"):
             model=ai_model,
             contents=user_message,
             config=types.GenerateContentConfig(
-                system_instruction=RAG_SYSTEM_PROMPT,
+                system_instruction=RAG_SYSTEM_PROMPT.format(ticket_url=_get_ticket_url()),
                 max_output_tokens=8192,
             ),
         )
@@ -397,22 +413,23 @@ def ask(question: str, conversation_history: str = "[]"):
         if "create a ticket" not in answer_lower_check:
             answer_text += (
                 "\n\nCan't find what you're looking for? "
-                "[Create a ticket \u2192](/helpdesk/tickets/new)"
+                f"[Create a ticket \u2192]({_get_ticket_url()})"
             )
 
     # Extract cited articles — case-insensitive matching and partial title matching
     cited = []
     site_url = (frappe.utils.get_url() or "").rstrip("/")
     answer_lower = answer_text.lower()
+    kb_prefix = _get_kb_prefix()
     for title, info in article_map.items():
         if title.lower() in answer_lower:
-            info["url"] = f"{site_url}/helpdesk/kb/articles/{info['name']}"
+            info["url"] = f"{site_url}/helpdesk/{kb_prefix}/articles/{info['name']}"
             cited.append(info)
 
     # If no explicit citations found, include all articles that were sent as context
     if not cited:
         for info in list(article_map.values()):
-            info["url"] = f"{site_url}/helpdesk/kb/articles/{info['name']}"
+            info["url"] = f"{site_url}/helpdesk/{kb_prefix}/articles/{info['name']}"
             cited.append(info)
 
     # Generate follow-up questions

@@ -381,6 +381,11 @@ function renderMarkdown(text: string): string {
   html = html.replace(/^\d+\. (.+)$/gm, "<li>$1</li>");
   // Markdown links [text](url)
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="ai-inline-link">$1</a>');
+  // Fix portal-specific URLs for customer users
+  if (isCustomerPortal.value) {
+    html = html.replace(/\/helpdesk\/tickets\/new/g, "/helpdesk/my-tickets/new");
+    html = html.replace(/\/helpdesk\/kb\/articles\//g, "/helpdesk/kb-public/articles/");
+  }
   // Paragraphs
   html = html
     .split("\n\n")
