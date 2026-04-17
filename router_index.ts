@@ -78,6 +78,11 @@ const routes = [
     props: true,
   },
   {
+    path: "/kb/trash",
+    name: "KBTrash",
+    component: () => import("@/pages/knowledge-base/KBTrash.vue"),
+  },
+  {
     path: "/customers",
     name: "CustomerList",
     component: () => import("@/pages/desk/customer/Customers.vue"),
@@ -202,6 +207,12 @@ router.beforeEach(async (to, _, next) => {
   if (!authStore.isLoggedIn) {
     window.location.href = LOGIN_PAGE + "?redirect-to=/helpdesk";
     return;
+  } else if (to.name === "Article" && !authStore.hasDeskAccess) {
+    // Customer landed on agent KB route — redirect to public KB route
+    next({
+      name: "ArticlePublic",
+      params: { articleId: to.params.articleId },
+    });
   } else if (!to.meta.public && !authStore.hasDeskAccess) {
     next({ name: "TicketsCustomer" });
   } else if (to.name === "TicketAgent" && !authStore.isAgent) {
