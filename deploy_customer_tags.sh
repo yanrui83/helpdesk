@@ -45,6 +45,10 @@ echo "AiChatPanel.vue copied"
 cp /workspace/Article.vue "$APP/desk/src/pages/knowledge-base/Article.vue"
 echo "Article.vue copied"
 
+# Step 5b: Copy router fix (customer KB redirect)
+cp /workspace/router_index.ts "$APP/desk/src/router/index.ts"
+echo "router_index.ts copied"
+
 # Step 6: Copy custom TicketNew.vue and rebuild frontend
 cp /workspace/TicketNew.vue "$APP/desk/src/pages/ticket/TicketNew.vue"
 echo "TicketNew.vue copied"
