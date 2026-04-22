@@ -71,6 +71,17 @@ EOF
         echo "Admin realtime notification hooks added."
     fi
 
+    # Deploy updated layoutSettings (Equipment in agent sidebar, Spare Part in portal sidebar)
+    cp /workspace/layoutSettings.ts /home/frappe/frappe-bench/apps/helpdesk/desk/src/components/layouts/layoutSettings.ts
+
+    # Patch Sidebar.vue for conditional Spare Part tab
+    sed -i 's/\r$//' /workspace/patch_sidebar.py
+    python3 /workspace/patch_sidebar.py
+
+    # Fix sidebar to use optimistic hasEquipment (show tab immediately, only hide if API says false)
+    sed -i 's/\r$//' /workspace/fix_sidebar_optimistic.py
+    python3 /workspace/fix_sidebar_optimistic.py
+
     # Rebuild helpdesk frontend with patched router + AI chat
     cd /home/frappe/frappe-bench && bench build --app helpdesk
 
@@ -142,6 +153,10 @@ if [ -d "/home/frappe/frappe-bench/apps/frappe" ]; then
     sed -i 's/\r$//' /workspace/deploy_customer_tags.sh
     bash /workspace/deploy_customer_tags.sh
 
+    # Deploy Equipment 3D Viewer
+    sed -i 's/\r$//' /workspace/deploy_equipment.sh
+    bash /workspace/deploy_equipment.sh
+
     deploy_kb_features
     bench start
 else
@@ -192,6 +207,10 @@ bash /workspace/deploy_api_key_setting.sh
 # Deploy Customer Tags doctype + mandatory ticket fields
 sed -i 's/\r$//' /workspace/deploy_customer_tags.sh
 bash /workspace/deploy_customer_tags.sh
+
+# Deploy Equipment 3D Viewer
+sed -i 's/\r$//' /workspace/deploy_equipment.sh
+bash /workspace/deploy_equipment.sh
 
 deploy_kb_features
 configure_site_settings

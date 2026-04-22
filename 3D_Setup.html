@@ -1,0 +1,349 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D Spare Part  Setup</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f9fafb;--panel:#ffffff;--card:#f3f4f6;--border:#e5e7eb;--primary:#4f46e5;--primary-light:#6366f1;--primary-bg:rgba(99,102,241,.08);--primary-border:rgba(99,102,241,.25);--orange:#f97316;--green:#10b981;--red:#ef4444;--gold:#f59e0b;--text:#1f2937;--text-secondary:#374151;--muted:#6b7280;--faint:#9ca3af;--disp:'Inter',system-ui,-apple-system,sans-serif;--mono:'JetBrains Mono','DM Mono',monospace;--shadow-sm:0 1px 2px rgba(0,0,0,.05);--shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);--shadow-md:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -2px rgba(0,0,0,.1);--shadow-lg:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1);--radius:8px;--radius-lg:12px}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);font-family:var(--disp);color:var(--text);-webkit-font-smoothing:antialiased}
+body{display:flex;align-items:center;justify-content:center;padding:24px;overflow-y:auto}
+
+.setup{width:100%;max-width:700px}
+.logo{font-size:24px;font-weight:800;letter-spacing:.5px;text-align:center;margin-bottom:6px;color:var(--text)}
+.logo span{color:var(--primary)}
+.logo sub{font-size:10px;font-weight:500;color:var(--muted);letter-spacing:2px;vertical-align:bottom;margin-left:3px;font-family:var(--mono)}
+.subtitle{text-align:center;font-size:12px;color:var(--muted);font-family:var(--mono);margin-bottom:32px;letter-spacing:.8px}
+
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px;margin-bottom:14px;box-shadow:var(--shadow-sm);transition:box-shadow .15s}
+.card:hover{box-shadow:var(--shadow)}
+.card h3{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px;display:flex;align-items:center;gap:10px;color:var(--text)}
+.card h3 .num{width:26px;height:26px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0}
+
+.model-status{display:flex;align-items:center;gap:14px;padding:14px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px}
+.ms-icon{width:42px;height:42px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.ms-icon.ok{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25)}
+.ms-icon.empty{background:var(--card);border:1px solid var(--border)}
+.ms-info{flex:1;min-width:0}
+.ms-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ms-detail{font-size:10px;color:var(--muted);font-family:var(--mono)}
+
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:none;border-radius:var(--radius);padding:10px 18px;font-family:var(--disp);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:7px;letter-spacing:.3px}
+.btn:hover{transform:translateY(-1px)}
+.btn.primary{background:var(--primary);color:#fff;box-shadow:var(--shadow-sm)}
+.btn.primary:hover{background:#4338ca;box-shadow:var(--shadow-md)}
+.btn.secondary{background:var(--panel);color:var(--text-secondary);border:1px solid var(--border)}
+.btn.secondary:hover{background:var(--card);border-color:#d1d5db}
+.btn.danger{background:rgba(239,68,68,.06);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.btn.danger:hover{background:rgba(239,68,68,.12)}
+.btn.big{padding:14px 28px;font-size:14px;font-weight:700;border-radius:var(--radius-lg);letter-spacing:.5px;width:100%;justify-content:center}
+.btn.big.primary{box-shadow:var(--shadow)}
+.btn.big.primary:hover{box-shadow:var(--shadow-lg)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
+
+.config-status{display:flex;align-items:center;gap:10px;padding:12px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.config-status .cs-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+.sep{height:1px;background:var(--border);margin:20px 0}
+.note{font-size:11px;color:var(--muted);line-height:1.7;margin-top:10px}
+.note strong{color:var(--text);font-weight:600}
+
+input[type="file"]{display:none}
+.drop-zone{border:2px dashed var(--border);border-radius:var(--radius-lg);padding:28px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:14px}
+.drop-zone:hover,.drop-zone.over{border-color:var(--primary);background:var(--primary-bg)}
+.drop-zone .dz-icon{font-size:28px;margin-bottom:8px}
+.drop-zone .dz-text{font-size:12px;color:var(--muted);font-family:var(--mono)}
+.drop-zone .dz-text strong{color:var(--primary)}
+
+.toast-area{position:fixed;bottom:18px;right:18px;z-index:999;display:flex;flex-direction:column;gap:5px;pointer-events:none}
+.toast{background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--primary);border-radius:var(--radius);padding:10px 14px;font-size:12px;color:var(--text);font-weight:500;animation:tIn .2s ease;box-shadow:var(--shadow-lg)}
+@keyframes tIn{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+
+.progress{height:4px;background:var(--card);border-radius:2px;overflow:hidden;margin-top:8px;display:none}
+.progress-bar{height:100%;background:var(--primary);border-radius:2px;transition:width .2s;width:0%}
+</style>
+</head>
+<body>
+<div class="setup">
+  <div class="logo">SPARE<span>PART</span><sub>3D</sub></div>
+  <div class="subtitle">3D SPARE PART LIST  SETUP &amp; CONFIGURATION</div>
+
+  <!-- STEP 1: 3D MODEL -->
+  <div class="card">
+    <h3><span class="num">1</span> 3D Model File</h3>
+    <div class="model-status" id="model-status">
+      <div class="ms-icon empty" id="ms-icon"></div>
+      <div class="ms-info">
+        <div class="ms-name" id="ms-name">No model loaded</div>
+        <div class="ms-detail" id="ms-detail">Select a .glb file to get started</div>
+      </div>
+    </div>
+    <div class="drop-zone" id="drop-zone">
+      <div class="dz-icon"></div>
+      <div class="dz-text">Drag &amp; drop a <strong>.glb</strong> file here, or <strong>click to browse</strong></div>
+    </div>
+    <input type="file" id="glb-input" accept=".glb">
+    <div class="progress" id="progress"><div class="progress-bar" id="progress-bar"></div></div>
+    <div class="btn-row">
+      <button class="btn danger" id="btn-clear-model" onclick="clearModel()" disabled> Remove Model</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: CONFIGURATION -->
+  <div class="card">
+    <h3><span class="num">2</span> Hotspot &amp; Parts Configuration</h3>
+    <div class="config-status" id="config-status">
+      <div class="cs-dot" style="background:var(--muted)"></div>
+      <span>No configuration saved</span>
+    </div>
+    <div class="btn-row">
+      <button class="btn secondary" onclick="exportConfig()"> Export Config JSON</button>
+      <button class="btn secondary" onclick="document.getElementById('config-input').click()"> Import Config JSON</button>
+      <button class="btn danger" id="btn-clear-config" onclick="clearConfig()" disabled> Reset Config</button>
+    </div>
+    <input type="file" id="config-input" accept=".json" style="display:none">
+    <div class="note">
+      Export your configuration to share with other deployments.<br>
+      Import a config JSON to load hotspots, component info, and spare parts from another setup.
+    </div>
+  </div>
+
+  <!-- STEP 3: LAUNCH -->
+  <div class="card">
+    <h3><span class="num">3</span> Launch</h3>
+    <div class="btn-row" style="flex-direction:column;gap:10px">
+      <button class="btn big primary" id="btn-viewer" onclick="openViewer()" disabled> Open 3D Viewer</button>
+      <button class="btn big secondary" id="btn-editor" onclick="openEditor()" disabled> Open Editor Mode</button>
+    </div>
+    <div class="note" style="margin-top:14px">
+      <strong>Viewer</strong>  End-user view: browse 3D model, click hotspots, view spare parts, add to cart.<br>
+      <strong>Editor</strong>  Setup mode: drag hotspots, edit component info, configure spare parts, then save.
+    </div>
+  </div>
+</div>
+
+<div class="toast-area" id="toasts"></div>
+
+<script>
+const DB_NAME = 'SparePart3D';
+const DB_VER = 1;
+const STORE = 'models';
+const MODEL_KEY = 'current_model';
+const CONFIG_KEY = 'sparepart3d_config';
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VER);
+    req.onupgradeneeded = () => req.result.createObjectStore(STORE);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function saveModel(file) {
+  const buf = await file.arrayBuffer();
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).put({
+      name: file.name,
+      size: file.size,
+      date: new Date().toISOString(),
+      data: buf
+    }, MODEL_KEY);
+    tx.oncomplete = () => { db.close(); resolve(); };
+    tx.onerror = () => { db.close(); reject(tx.error); };
+  });
+}
+
+async function getModelInfo() {
+  try {
+    const db = await openDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE, 'readonly');
+      const req = tx.objectStore(STORE).get(MODEL_KEY);
+      req.onsuccess = () => {
+        db.close();
+        if (req.result) {
+          resolve({ name: req.result.name, size: req.result.size, date: req.result.date });
+        } else {
+          resolve(null);
+        }
+      };
+      req.onerror = () => { db.close(); resolve(null); };
+    });
+  } catch { return null; }
+}
+
+async function deleteModel() {
+  const db = await openDB();
+  return new Promise((resolve) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).delete(MODEL_KEY);
+    tx.oncomplete = () => { db.close(); resolve(); };
+    tx.onerror = () => { db.close(); resolve(); };
+  });
+}
+
+function getConfig() {
+  try { return JSON.parse(localStorage.getItem(CONFIG_KEY)); } catch { return null; }
+}
+
+function saveConfigToStorage(config) {
+  localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+}
+
+function fmtSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(1) + ' MB';
+}
+
+async function refreshUI() {
+  const model = await getModelInfo();
+  const config = getConfig();
+
+  const icon = document.getElementById('ms-icon');
+  const name = document.getElementById('ms-name');
+  const detail = document.getElementById('ms-detail');
+  const clearBtn = document.getElementById('btn-clear-model');
+
+  if (model) {
+    icon.className = 'ms-icon ok';
+    icon.textContent = '';
+    name.textContent = model.name;
+    detail.textContent = fmtSize(model.size) + '  stored ' + new Date(model.date).toLocaleDateString();
+    clearBtn.disabled = false;
+  } else {
+    icon.className = 'ms-icon empty';
+    icon.textContent = '';
+    name.textContent = 'No model loaded';
+    detail.textContent = 'Select a .glb file to get started';
+    clearBtn.disabled = true;
+  }
+
+  const cs = document.getElementById('config-status');
+  const clearCfg = document.getElementById('btn-clear-config');
+  if (config && config.components && config.components.length > 0) {
+    const n = config.components.length;
+    const p = config.components.reduce((s, c) => s + (c.parts ? c.parts.length : 0), 0);
+    cs.innerHTML = '<div class="cs-dot" style="background:var(--green)"></div><span>' + n + ' components, ' + p + ' spare parts configured</span>';
+    if (config.projectName) {
+      cs.innerHTML += '<span style="margin-left:auto;color:var(--primary);font-weight:600">' + config.projectName + '</span>';
+    }
+    clearCfg.disabled = false;
+  } else {
+    cs.innerHTML = '<div class="cs-dot" style="background:var(--muted)"></div><span>No configuration  use Editor to set up hotspots &amp; parts</span>';
+    clearCfg.disabled = true;
+  }
+
+  document.getElementById('btn-viewer').disabled = !model;
+  document.getElementById('btn-editor').disabled = !model;
+}
+
+const dropZone = document.getElementById('drop-zone');
+const glbInput = document.getElementById('glb-input');
+const configInput = document.getElementById('config-input');
+
+dropZone.addEventListener('click', () => glbInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('over');
+  const f = [...e.dataTransfer.files].find(f => f.name.endsWith('.glb'));
+  if (f) handleModelFile(f);
+  else toast('Please drop a .glb file');
+});
+
+glbInput.addEventListener('change', e => {
+  if (e.target.files[0]) handleModelFile(e.target.files[0]);
+});
+
+configInput.addEventListener('change', e => {
+  if (e.target.files[0]) handleConfigImport(e.target.files[0]);
+  e.target.value = '';
+});
+
+async function handleModelFile(file) {
+  const prog = document.getElementById('progress');
+  const bar = document.getElementById('progress-bar');
+  prog.style.display = 'block';
+  bar.style.width = '30%';
+
+  try {
+    bar.style.width = '60%';
+    await saveModel(file);
+    bar.style.width = '100%';
+    toast('Model saved: ' + file.name);
+    setTimeout(() => { prog.style.display = 'none'; bar.style.width = '0%'; }, 600);
+    refreshUI();
+  } catch (err) {
+    prog.style.display = 'none';
+    toast('Error saving model: ' + err.message);
+  }
+}
+
+function handleConfigImport(file) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const config = JSON.parse(e.target.result);
+      if (!config.components || !Array.isArray(config.components)) {
+        toast('Invalid config: missing components array');
+        return;
+      }
+      saveConfigToStorage(config);
+      toast('Configuration imported: ' + (config.projectName || 'unnamed'));
+      refreshUI();
+    } catch (err) {
+      toast('Invalid JSON file');
+    }
+  };
+  reader.readAsText(file);
+}
+
+async function clearModel() {
+  if (!confirm('Remove stored 3D model?')) return;
+  await deleteModel();
+  toast('Model removed');
+  refreshUI();
+}
+
+function clearConfig() {
+  if (!confirm('Reset all hotspot and spare part configuration?')) return;
+  localStorage.removeItem(CONFIG_KEY);
+  toast('Configuration reset');
+  refreshUI();
+}
+
+function exportConfig() {
+  const config = getConfig();
+  if (!config) { toast('No configuration to export'); return; }
+  const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (config.projectName || 'sparepart3d') + '_config.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('Config exported');
+}
+
+function openViewer() { window.location.href = '3D Sparepart.html'; }
+function openEditor() { window.location.href = '3D Sparepart.html?mode=editor'; }
+
+function toast(msg) {
+  const e = document.createElement('div');
+  e.className = 'toast';
+  e.textContent = msg;
+  document.getElementById('toasts').appendChild(e);
+  setTimeout(() => e.remove(), 3000);
+}
+
+refreshUI();
+</script>
+</body>
+</html>

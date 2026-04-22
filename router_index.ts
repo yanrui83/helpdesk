@@ -118,6 +118,19 @@ const routes = [
     component: () => import("@/pages/call-logs/CallLogs.vue"),
   },
 
+  // Equipment Routes (Agent)
+  {
+    path: "/equipment",
+    name: "EquipmentList",
+    component: () => import("@/pages/equipment/EquipmentList.vue"),
+  },
+  {
+    path: "/equipment/:equipmentId",
+    name: "EquipmentDetail",
+    component: () => import("@/pages/equipment/EquipmentDetail.vue"),
+    props: true,
+  },
+
   // Customer Portal Routes
   {
     path: "/my-tickets",
@@ -173,6 +186,28 @@ const routes = [
     path: "/kb-public/articles/:articleId",
     name: "ArticlePublic",
     component: () => import("@/pages/knowledge-base/Article.vue"),
+    props: true,
+    meta: {
+      public: true,
+      auth: true,
+    },
+  },
+
+  // Equipment Routes (Customer Portal)
+  {
+    path: "/my-equipment",
+    name: "CustomerEquipmentList",
+    component: () => import("@/pages/equipment/EquipmentList.vue"),
+    props: { isPortal: true },
+    meta: {
+      public: true,
+      auth: true,
+    },
+  },
+  {
+    path: "/my-equipment/:equipmentId",
+    name: "CustomerEquipmentDetail",
+    component: () => import("@/pages/equipment/EquipmentDetail.vue"),
     props: true,
     meta: {
       public: true,
