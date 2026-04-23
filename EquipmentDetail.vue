@@ -72,7 +72,7 @@ const configSaved = ref(false);
 
 const isAgent = computed(() => authStore.isAgent || authStore.hasDeskAccess);
 
-const VIEWER_VER = "6";
+const VIEWER_VER = "7";
 
 const viewerUrl = computed(() => {
   if (!equipmentData.value.model_file) return "";
@@ -80,6 +80,7 @@ const viewerUrl = computed(() => {
   const params = new URLSearchParams();
   params.set("embedded", "1");
   params.set("model", equipmentData.value.model_file);
+  params.set("equipment_id", String(route.params.equipmentId));
   if (isEditor.value) params.set("mode", "editor");
   if (equipmentData.value.config) {
     params.set("config", encodeURIComponent(equipmentData.value.config));

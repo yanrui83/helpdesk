@@ -337,7 +337,7 @@ body{font-family:var(--disp);color:var(--text);display:flex;flex-direction:colum
   <div class="modal">
     <div class="mhd"><h4>Order Cart</h4><button class="mcl" onclick="closeCart()">&#10005;</button></div>
     <div class="mbd" id="cart-bd"></div>
-    <div class="mft"><span style="font-size:13px;color:var(--muted);flex:1;font-weight:500" id="cftotal">Total: $0</span><button class="tbtn" onclick="closeCart()">Continue</button><button class="obtn" style="width:auto;padding:9px 18px;font-size:12px" onclick="submitOrder()">Submit Order</button></div>
+    <div class="mft"><span style="font-size:13px;color:var(--muted);flex:1;font-weight:500" id="cftotal">Total: $0</span><button class="tbtn" onclick="closeCart()">Continue</button><button class="obtn" id="btn-submit-order" style="width:auto;padding:9px 18px;font-size:12px" onclick="submitOrder()">Submit Order</button></div>
   </div>
 </div>
 <div class="toasts" id="toasts"></div>
@@ -591,7 +591,47 @@ function updC(){var n=Object.keys(cart).length,t=Object.values(cart).reduce(func
 function openCart(){renderCart();document.getElementById('cart-ovr').classList.add('open')}
 function closeCart(){document.getElementById('cart-ovr').classList.remove('open')}
 function renderCart(){var items=Object.values(cart),bd=document.getElementById('cart-bd');if(!items.length){bd.innerHTML='<p style="color:var(--muted);font-size:13px">Cart is empty.</p>';return}var h='<table class="ctbl"><thead><tr><th>Part</th><th>SKU</th><th>Unit</th><th>Qty</th><th>Total</th><th></th></tr></thead><tbody>';items.forEach(function(ci){h+='<tr><td style="font-weight:600;font-size:12px">'+escH(ci.part.name)+'</td><td style="font-family:var(--mono);font-size:11px;color:var(--muted)">'+escH(ci.part.sku)+'</td><td style="font-family:var(--mono)">$'+ci.part.price.toLocaleString()+'</td><td style="font-weight:700;text-align:center">'+ci.qty+'</td><td style="font-family:var(--mono);color:var(--primary);font-weight:700">$'+(ci.part.price*ci.qty).toLocaleString()+'</td><td><button class="rbtn" onclick="rmC(\''+ci.part.sku+'\')">&#10005;</button></td></tr>'});var tot=items.reduce(function(s,c){return s+c.part.price*c.qty},0);h+='</tbody><tfoot><tr style="border-top:2px solid var(--border)"><td colspan="4" style="padding:10px 8px;font-weight:700;font-size:12px">Order Total</td><td style="padding:10px 8px;font-family:var(--mono);font-size:16px;font-weight:700;color:var(--primary)">$'+tot.toLocaleString()+'</td><td></td></tr></tfoot></table>';bd.innerHTML=h;document.getElementById('cftotal').textContent='Total: $'+tot.toLocaleString()}
-function submitOrder(){closeCart();toast('Order submitted successfully')}
+function submitOrder(){
+  var items=Object.values(cart);
+  if(!items.length){toast('Cart is empty');return;}
+  var equipId=_urlParams.get('equipment_id');
+  // If no equipment_id (standalone mode), just show confirmation
+  if(!equipId||location.protocol==='file:'){
+    closeCart();cart={};updC();
+    toast('Order submitted successfully');
+    return;
+  }
+  // Disable button and show loading
+  var btn=document.getElementById('btn-submit-order');
+  btn.disabled=true;btn.textContent='Submitting...';
+  var cartItems=items.map(function(ci){return{name:ci.part.name,sku:ci.part.sku,qty:ci.qty,price:ci.part.price};});
+  fetch('/api/method/helpdesk.api.equipment.submit_spare_part_order',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-Frappe-CSRF-Token':getCsrfToken()},
+    body:JSON.stringify({equipment_id:equipId,cart_items:JSON.stringify(cartItems)})
+  }).then(function(r){return r.json();}).then(function(data){
+    if(data.message&&data.message.ticket_id){
+      closeCart();cart={};updC();
+      toast('Ticket '+data.message.ticket_id+' raised — our team will contact you shortly!');
+    } else if(data.exc_type){
+      toast('Error: '+(data.exception||data.exc_type||'Submission failed'));
+    } else {
+      closeCart();cart={};updC();
+      toast('Order submitted successfully');
+    }
+  }).catch(function(err){
+    toast('Network error — please try again');
+    console.error('[submitOrder]',err);
+  }).finally(function(){
+    btn.disabled=false;btn.textContent='Submit Order';
+  });
+}
+function getCsrfToken(){
+  try{return frappe.csrf_token||document.cookie.match(/csrf_token=([^;]+)/)[1]||'';}catch(e){
+    var m=document.cookie.match(/csrf_token=([^;]+)/);
+    return m?m[1]:'';
+  }
+}
 
 /* ============ TREE ============ */
 function buildTree(){document.getElementById('ptree').innerHTML=CONFIG.components.map(function(c){return'<div class="tgrp"><div class="tghd" id="tghd-'+c.id+'" onclick="togGrp(\''+c.id+'\')"><span class="chev">&#9654;</span><div class="tdot" style="background:'+c.hc+'"></div>'+escH(c.label)+'<span class="tcnt">'+(c.parts||[]).length+'</span></div><div class="titems" id="tgi-'+c.id+'"><div class="titem" id="ti-'+c.id+'" onclick="selPart(\''+c.id+'\')"><div class="tidot" style="background:'+c.hc+'"></div><span style="flex:1">View Spare Parts</span><span class="ticnt">'+(c.parts||[]).length+' parts</span></div></div></div>'}).join('')}
