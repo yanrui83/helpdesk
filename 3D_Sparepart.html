@@ -343,6 +343,7 @@ body{font-family:var(--disp);color:var(--text);display:flex;flex-direction:colum
 <div class="toasts" id="toasts"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script>
 var _urlParams=new URLSearchParams(location.search);
@@ -378,6 +379,9 @@ scene.add(new THREE.DirectionalLight(0xffa040,0.3)).position.set(0,-2,-8);
 scene.add(new THREE.HemisphereLight(0xdbeafe,0xe8ecf1,0.6));
 var grid=new THREE.GridHelper(30,60,0xc7d2de,0xdde3eb);grid.material.opacity=0.5;grid.material.transparent=true;scene.add(grid);
 var loadedModel=null,allMeshes=[],gltfLoader=new THREE.GLTFLoader();
+var dracoLoader=new THREE.DRACOLoader();
+dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/draco/');
+gltfLoader.setDRACOLoader(dracoLoader);
 var modelCenter=new THREE.Vector3(0,1,0),modelSize=new THREE.Vector3(4,4,4);
 
 function processModel(gltf){
