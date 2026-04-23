@@ -345,6 +345,7 @@ body{font-family:var(--disp);color:var(--text);display:flex;flex-direction:colum
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<!-- v6 -->
 <script>
 var _urlParams=new URLSearchParams(location.search);
 var IS_EDITOR=_urlParams.get('mode')==='editor';
@@ -380,7 +381,8 @@ scene.add(new THREE.HemisphereLight(0xdbeafe,0xe8ecf1,0.6));
 var grid=new THREE.GridHelper(30,60,0xc7d2de,0xdde3eb);grid.material.opacity=0.5;grid.material.transparent=true;scene.add(grid);
 var loadedModel=null,allMeshes=[],gltfLoader=new THREE.GLTFLoader();
 var dracoLoader=new THREE.DRACOLoader();
-dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/draco/');
+// Use locally-bundled Draco decoder files (draco/ subfolder next to this HTML)
+dracoLoader.setDecoderPath('draco/');
 gltfLoader.setDRACOLoader(dracoLoader);
 var modelCenter=new THREE.Vector3(0,1,0),modelSize=new THREE.Vector3(4,4,4);
 
@@ -419,10 +421,22 @@ function loadModel(){
 }
 function loadFromUrl(src){
   var modelSrc=src||'2311.glb';
-  if(location.protocol!=='file:'||src){gltfLoader.load(modelSrc,processModel,function(xhr){if(xhr.total>0)document.getElementById('ltxt').textContent='LOADING '+Math.round(xhr.loaded/xhr.total*100)+'%'},function(err){showLoadError(err)})}
-  else showLoadError();
+  document.getElementById('ltxt').textContent='LOADING...';
+  if(location.protocol!=='file:'||src){gltfLoader.load(modelSrc,processModel,function(xhr){if(xhr.total>0)document.getElementById('ltxt').textContent='LOADING '+Math.round(xhr.loaded/xhr.total*100)+'%'},function(err){showLoadError(err,modelSrc)})}
+  else showLoadError(null,'(file: protocol, no URL)');
 }
-function showLoadError(){document.getElementById('ltxt').textContent='NO MODEL FOUND';var e=document.getElementById('loaderr');e.style.display='block';e.innerHTML='Go to <a href="index.html">Setup Page</a> to select your .glb model file first.'}
+function showLoadError(err,src){
+  document.getElementById('ltxt').textContent='NO MODEL FOUND';
+  var e=document.getElementById('loaderr');e.style.display='block';
+  var msg=err?(err.message||String(err)):'No GLB in local storage';
+  var urlInfo=src?(' URL: '+src):'';
+  if(MODEL_URL_PARAM){
+    e.innerHTML='<b>Load error</b>'+urlInfo+'<br><small style="color:#ef4444">'+msg+'</small>';
+  } else {
+    e.innerHTML='Go to <a href="index.html">Setup Page</a> to select your .glb model file first.<br><small style="color:#ef4444">'+msg+'</small>';
+  }
+  console.error('[3D Viewer] load error',{src:src,model_url_param:MODEL_URL_PARAM,err:err});
+}
 
 function autoDistributeHotspots(bbox,center,size){
   var comps=CONFIG.components,n=comps.length;
