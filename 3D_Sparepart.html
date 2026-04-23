@@ -409,15 +409,18 @@ function processModel(gltf){
 }
 
 function loadModel(){
+  // When a server URL param is provided (embedded/portal mode), skip IndexedDB
+  // and load directly from the server URL to avoid stale cached blobs.
+  if(MODEL_URL_PARAM){loadFromUrl(MODEL_URL_PARAM);return;}
   getModelBlob().then(function(blob){
-    if(blob){var url=URL.createObjectURL(blob);gltfLoader.load(url,function(gltf){URL.revokeObjectURL(url);processModel(gltf)},function(xhr){if(xhr.total>0)document.getElementById('ltxt').textContent='LOADING '+Math.round(xhr.loaded/xhr.total*100)+'%'},function(err){URL.revokeObjectURL(url);tryFileFallback(err)});return}
-    tryFileFallback();
-  }).catch(function(){tryFileFallback()});
+    if(blob){var url=URL.createObjectURL(blob);gltfLoader.load(url,function(gltf){URL.revokeObjectURL(url);processModel(gltf)},function(xhr){if(xhr.total>0)document.getElementById('ltxt').textContent='LOADING '+Math.round(xhr.loaded/xhr.total*100)+'%'},function(err){URL.revokeObjectURL(url);loadFromUrl(null)});return}
+    loadFromUrl(null);
+  }).catch(function(){loadFromUrl(null);});
 }
-function tryFileFallback(prevErr){
-  var modelSrc=MODEL_URL_PARAM||'2311.glb';
-  if(location.protocol!=='file:'||MODEL_URL_PARAM){gltfLoader.load(modelSrc,processModel,function(xhr){if(xhr.total>0)document.getElementById('ltxt').textContent='LOADING '+Math.round(xhr.loaded/xhr.total*100)+'%'},function(err){showLoadError(err)})}
-  else showLoadError(prevErr);
+function loadFromUrl(src){
+  var modelSrc=src||'2311.glb';
+  if(location.protocol!=='file:'||src){gltfLoader.load(modelSrc,processModel,function(xhr){if(xhr.total>0)document.getElementById('ltxt').textContent='LOADING '+Math.round(xhr.loaded/xhr.total*100)+'%'},function(err){showLoadError(err)})}
+  else showLoadError();
 }
 function showLoadError(){document.getElementById('ltxt').textContent='NO MODEL FOUND';var e=document.getElementById('loaderr');e.style.display='block';e.innerHTML='Go to <a href="index.html">Setup Page</a> to select your .glb model file first.'}
 
