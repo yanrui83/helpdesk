@@ -72,6 +72,8 @@ const configSaved = ref(false);
 
 const isAgent = computed(() => authStore.isAgent || authStore.hasDeskAccess);
 
+const VIEWER_VER = "6";
+
 const viewerUrl = computed(() => {
   if (!equipmentData.value.model_file) return "";
   const base = "/assets/helpdesk/3d-viewer/index.html";
@@ -82,6 +84,7 @@ const viewerUrl = computed(() => {
   if (equipmentData.value.config) {
     params.set("config", encodeURIComponent(equipmentData.value.config));
   }
+  params.set("_v", VIEWER_VER);
   return `${base}?${params.toString()}`;
 });
 
